@@ -4,7 +4,6 @@ from opencc import OpenCC
 from tqdm import tqdm
 import pickle
 import codecs
-from traceback import print_exc
 
 
 def jieba_cut(text: str) -> list:

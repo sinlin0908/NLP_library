@@ -2,7 +2,7 @@
 
 ## API
 
-### class Embedding
+### Class Embedding
 
 ```python
 class Embedding(self, w2v_dict, w2id_dict, id2w_dict)
