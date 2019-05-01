@@ -106,6 +106,7 @@ class EmbeddingGenerator:
 
     def _get_w2id(self):
         print("Get Word to ID Dictionary....")
+
         if not self._w2v_dict:
             raise ValueError(self._w2v_dict)
 
@@ -113,7 +114,8 @@ class EmbeddingGenerator:
             self._w2id_dict.update(self._special_tokens)
 
         for i, k in enumerate(self._w2v_dict.keys(), start=self._num_word):
-            self._w2id_dict[k] = i
+            if k not in self._special_tokens.keys():
+                self._w2id_dict[k] = i
 
     def _get_id2w(self):
         print("Get ID to Word Dictionary....")
@@ -126,3 +128,5 @@ class EmbeddingGenerator:
 if __name__ == "__main__":
     embg = EmbeddingGenerator(dim=300, special_tokens={"PAD": 0, "EOS": 1})
     emb = embg.load_word2vec_file('./embedding/Total_word.word', 1292608)
+
+    print(emb.w2id_dict['PAD'])
