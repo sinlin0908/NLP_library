@@ -1,6 +1,5 @@
 import numpy as np
 import jieba
-from opencc import OpenCC
 from tqdm import tqdm
 import pickle
 import codecs
@@ -35,13 +34,9 @@ def save(data, file_name):
         pickle.dump(data, f)
 
 
-def cc(mode: str):
-    return OpenCC(mode)
-
-
 class Embedding:
     def __init__(self, w2v_dict, w2id_dict, id2w_dict):
-        self.w2v_dict = w2id_dict
+        self.w2v_dict = w2v_dict
         self.w2id_dict = w2id_dict
         self.id2w_dict = id2w_dict
 
@@ -69,6 +64,7 @@ class EmbeddingGenerator:
                 raise TypeError(special_tokens)
 
             self._special_tokens = special_tokens
+            self._num_word += len(self._special_tokens)
 
     def load_word2vec_file(self, file_name: str = None, token_size: int = 0):
 
