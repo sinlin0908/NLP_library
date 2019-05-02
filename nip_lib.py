@@ -35,10 +35,11 @@ def save(data, file_name):
 
 
 class Embedding:
-    def __init__(self, w2v_dict, w2id_dict, id2w_dict):
+    def __init__(self, w2v_dict, w2id_dict, id2w_dict, emb_matrix):
         self.w2v_dict = w2v_dict
         self.w2id_dict = w2id_dict
         self.id2w_dict = id2w_dict
+        self.emb_matrix = emb_matrix
 
     def __len__(self):
         return len(self.w2v_dict)
@@ -53,6 +54,7 @@ class EmbeddingGenerator:
         self._w2v_dict = {}
         self._w2id_dict = {}
         self._id2w_dict = None
+        self._emb_matrix = None
         self._num_word = 0
         self._dim = dim
         self._special_tokens = None
@@ -64,7 +66,9 @@ class EmbeddingGenerator:
                 raise TypeError(special_tokens)
 
             self._special_tokens = special_tokens
-            self._num_word += len(self._special_tokens)
+
+    def get_num_word(self):
+        return self._num_word
 
     def load_word2vec_file(self, file_name: str = None, token_size: int = 0):
 
@@ -76,11 +80,13 @@ class EmbeddingGenerator:
         self._get_w2v(file_name, token_size)
         self._get_w2id()
         self._get_id2w()
+        self._get_emb_matrix()
 
         return Embedding(
             w2v_dict=self._w2v_dict,
             w2id_dict=self._w2id_dict,
-            id2w_dict=self._id2w_dict
+            id2w_dict=self._id2w_dict,
+            emb_matrix=self._emb_matrix
         )
 
     def _read_file_line(self, file_name: str, token_size: int):
@@ -98,11 +104,13 @@ class EmbeddingGenerator:
             vector = np.array([float(val) for val in array[1:]])
 
             self._w2v_dict[word] = vector
-            self._num_word += 1
 
         if self._special_tokens:
             for key in self._special_tokens.keys():
                 self._w2v_dict[key] = np.zeros(self._dim)
+
+        self._num_word = len(self._w2v_dict)
+        print("total word:", self._num_word)
 
     def _get_w2id(self):
         print("Get Word to ID Dictionary....")
@@ -113,7 +121,8 @@ class EmbeddingGenerator:
         if self._special_tokens:
             self._w2id_dict.update(self._special_tokens)
 
-        for i, k in enumerate(self._w2v_dict.keys(), start=self._num_word):
+        for i, k in enumerate(self._w2v_dict.keys(),
+                              start=len(self._special_tokens)):
             if k not in self._special_tokens.keys():
                 self._w2id_dict[k] = i
 
@@ -123,6 +132,14 @@ class EmbeddingGenerator:
             raise ValueError(self._w2id_dict)
 
         self._id2w_dict = {idx: word for word, idx in self._w2id_dict.items()}
+
+    def _get_emb_matrix(self):
+        print("Get embedding matrix.....")
+
+        self._emb_matrix = np.zeros((self._num_word+1, self._dim))
+
+        for w, i in self._w2id_dict.items():
+            self._emb_matrix[i] = self._w2v_dict[w]
 
 
 if __name__ == "__main__":
