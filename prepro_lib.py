@@ -107,7 +107,8 @@ class EmbeddingGenerator:
 
         if self._special_tokens:
             for key in self._special_tokens.keys():
-                self._w2v_dict[key] = np.zeros(self._dim)
+                self._w2v_dict[key] = np.zeros(self._dim,
+                                               dtype=np.int32)
 
         self._num_word = len(self._w2v_dict)
         print("total word:", self._num_word)
@@ -136,9 +137,10 @@ class EmbeddingGenerator:
     def _get_emb_matrix(self):
         print("Get embedding matrix.....")
 
-        self._emb_matrix = np.zeros((self._num_word+1, self._dim))
+        self._emb_matrix = np.zeros(
+            (self._num_word+1, self._dim), dtype=np.float32)
 
-        for w, i in self._w2id_dict.items():
+        for w, i in tqdm(self._w2id_dict.items()):
             self._emb_matrix[i] = self._w2v_dict[w]
 
 
