@@ -49,7 +49,7 @@ class EmbeddingGenerator:
     def __init__(
         self,
         dim: int = 0,
-        special_tokens: dict = None,
+        special_tokens2id: dict = None,
     ):
         self._w2v_dict = {}
         self._w2id_dict = {}
