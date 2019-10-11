@@ -38,9 +38,15 @@ class Embedding:
     def __init__(self, w2v_dict: dict, w2id_dict):
         self._w2v_dict = w2v_dict
         self._w2id_dict = w2id_dict
-        self._num_word = len(self._w2v_dict)
+        self._num_word = len(self._w2id_dict)
+
+        print(len(self._w2v_dict), len(self._w2id_dict))
 
     def __len__(self):
+        return self._num_word
+
+    @property
+    def num_word(self):
         return self._num_word
 
     @property
@@ -76,15 +82,16 @@ class EmbeddingGenerator:
         file_name: str = None,
         dim: int = 0,
         total_token_size: int = 0,
+        random: bool = False,
         special_tokens2id: dict = None,
     ):
         self._w2v_dict = {}
         self._w2id_dict = {}
-        self._num_word = 0
         self._dim = dim
         self._special_tokens = None
         self._file_name = file_name
         self._total_token_size = total_token_size
+        self._random = random
 
         if special_tokens2id:
 
@@ -93,18 +100,18 @@ class EmbeddingGenerator:
 
             self._special_tokens = special_tokens2id
 
-    @property
-    def num_word(self):
-        return self._num_word
+    def create_embedding(self):
 
-    def load_word2vec_file(self):
-
-        print('Load word to vector file.....')
+        print('Create embedding.....')
 
         if not self._file_name:
             raise ValueError("no file name")
 
-        self._get_w2v()
+        if not self._random:
+            self._get_w2v()
+        else:
+            self._get_random_w2v()
+
         self._get_w2id()
 
         return Embedding(w2v_dict=self._w2v_dict, w2id_dict=self._w2id_dict)
@@ -121,17 +128,30 @@ class EmbeddingGenerator:
         for line in self._read_file_line():
             array = line.split()
             word = array[0]
-            vector = np.array(array[1:], dtype=np.float32)
-
-            self._w2v_dict[word] = vector
+            vector = array[1:]
+            if vector:
+                self._w2v_dict[word] = np.array(vector, dtype=np.float32)
+            else:
+                raise ValueError("can not find vector")
 
         if self._special_tokens:
             for key in self._special_tokens.keys():
                 self._w2v_dict[key] = np.zeros(self._dim,
                                                dtype=np.int32)
 
-        self._num_word = len(self._w2v_dict)
-        print("total word:", self._num_word)
+        print("total word:", len(self._w2v_dict))
+
+    def _get_random_w2v(self):
+
+        for line in self._read_file_line():
+            word = line.strip()
+            vector = np.random.normal(loc=0, scale=0.1, size=self._dim)
+            self._w2v_dict[word] = vector
+
+        if self._special_tokens:
+            for key in self._special_tokens.keys():
+                self._w2v_dict[key] = np.zeros(self._dim,
+                                               dtype=np.int32)
 
     def _get_w2id(self):
         print("Get Word to ID Dictionary....")
@@ -140,17 +160,33 @@ class EmbeddingGenerator:
             raise ValueError("word to vector dict is not exist....")
 
         if self._special_tokens:
+
             self._w2id_dict.update(self._special_tokens)
 
-        for i, k in enumerate(self._w2v_dict.keys(),
-                              start=len(self._special_tokens)):
-            if k not in self._special_tokens.keys():
+            w2v_keys = self._w2v_dict.keys()
+            special_token_keys = self._special_tokens.keys()
+
+            for i, k in enumerate(w2v_keys,
+                                  start=len(self._special_tokens)):
+                if k not in special_token_keys:
+                    self._w2id_dict[k] = i
+        else:
+            for i, k in enumerate(self._w2v_dict.keys()):
                 self._w2id_dict[k] = i
 
 
 if __name__ == "__main__":
     embg = EmbeddingGenerator(file_name='./embedding/Total_word.word',
-                              total_token_size=1292608, dim=300, special_tokens2id={"PAD": 0, "EOS": 1})
-    emb = embg.load_word2vec_file()
+                              total_token_size=1292607, dim=300, special_tokens2id={"PAD": 0, "EOS": 1})
+    emb = embg.create_embedding()
 
-    print(emb.w2v['我'])
+    print(emb.w2v['的'])
+
+    eg = EmbeddingGenerator(
+        file_name="./embedding/chinese_character.text",
+        dim=100,
+        total_token_size=6722,
+        random=True,
+    )
+
+    eb = eg.create_embedding()
