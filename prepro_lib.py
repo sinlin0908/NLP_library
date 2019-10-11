@@ -57,14 +57,14 @@ class Embedding:
     def w2id(self):
         return self._w2id_dict
 
-    def get_id2w(self) -> dict:
+    def create_id2w(self) -> dict:
         print("Get ID to Word Dictionary....")
         if not self._w2id_dict:
             raise ValueError(self._w2id_dict)
 
         return {idx: word for word, idx in self._w2id_dict.items()}
 
-    def get_emb_matrix(self) -> list:
+    def create_emb_matrix(self) -> list:
         print("Get embedding matrix.....")
 
         emb_matrix = np.zeros(
@@ -77,6 +77,16 @@ class Embedding:
 
 
 class EmbeddingGenerator:
+    """
+    Parameters
+    -----------
+    - file_name : target file name
+    - dim : the dimension of the vector
+    - special_tokens2id : the w2id dictionary of the special tokens , ex: {"PAD": 0, "EOS": 1}
+    - total_token_size : the  size of total tokens
+    - random : whether randomly generate the vector
+    """
+
     def __init__(
         self,
         file_name: str = None,
@@ -100,7 +110,14 @@ class EmbeddingGenerator:
 
             self._special_tokens = special_tokens2id
 
-    def create_embedding(self):
+    def create_embedding(self) -> Embedding:
+        '''
+        Create word2vector dictionary, word2id dictionary
+
+        Return
+        ------
+        Embedding Object
+        '''
 
         print('Create embedding.....')
 
@@ -108,26 +125,32 @@ class EmbeddingGenerator:
             raise ValueError("no file name")
 
         if not self._random:
-            self._get_w2v()
+            self._create_w2v()
         else:
-            self._get_random_w2v()
+            self._create_random_w2v()
 
-        self._get_w2id()
+        self._create_w2id()
 
         return Embedding(w2v_dict=self._w2v_dict, w2id_dict=self._w2id_dict)
 
     def _read_file_line(self):
+        '''
+        read a line from file
+        '''
         with codecs.open(self._file_name, 'r', encoding='utf-8') as f:
             next(f)
 
             for line in tqdm(f, total=self._total_token_size):
                 yield line
 
-    def _get_w2v(self):
+    def _create_w2v(self):
+        '''
+        create w2v dictionary
+        '''
         print("Get Word to Vector Dictionary....")
         for line in self._read_file_line():
             array = line.split()
-            word = array[0]
+            word = array[0].strip()
             vector = array[1:]
             if vector:
                 self._w2v_dict[word] = np.array(vector, dtype=np.float32)
@@ -141,10 +164,13 @@ class EmbeddingGenerator:
 
         print("total word:", len(self._w2v_dict))
 
-    def _get_random_w2v(self):
+    def _create_random_w2v(self):
+        '''
+        randomly create w2v dictionary
+        '''
 
         for line in self._read_file_line():
-            word = line.strip()
+            word = line.split()[0].strip()
             vector = np.random.normal(loc=0, scale=0.1, size=self._dim)
             self._w2v_dict[word] = vector
 
@@ -153,7 +179,10 @@ class EmbeddingGenerator:
                 self._w2v_dict[key] = np.zeros(self._dim,
                                                dtype=np.int32)
 
-    def _get_w2id(self):
+    def _create_w2id(self):
+        '''
+        create w2id dictionary
+        '''
         print("Get Word to ID Dictionary....")
 
         if not self._w2v_dict:

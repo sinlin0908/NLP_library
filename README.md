@@ -10,7 +10,9 @@
 
 ### Class Embedding
 
-把 `EmbeddingGenerator` 生成的資料包裝成 `Embedding` 物件
+把 `EmbeddingGenerator` 生成的 word2vector 和 word2id 包裝成 `Embedding` 物件
+
+並自行決定是否產生 embedding matrix
 
 ```python
 class Embedding(self, w2v_dict, w2id_dict, id2w_dict)
@@ -19,17 +21,22 @@ class Embedding(self, w2v_dict, w2id_dict, id2w_dict)
 ### Class EmbeddingGenerator
 
 ```python
-class EmbeddingGenerator(dim: int = 0,special_tokens2id: dict = None,)
+class EmbeddingGenerator(
+        file_name: str = None,
+        dim: int = 0,
+        total_token_size: int = 0,
+        random: bool = False,
+        special_tokens2id: dict = None,
+    )
 ```
 
 - Parameters
+  - file_name : 檔案名稱
   - dim : 詞向量維度
   - special_tokens2id : 特殊詞的 id 對照字典, ex: {"PAD": 0, "EOS": 1}
+  - total_token_size : token 總數
+  - random : 向量是否要用隨機
 
-#### load_word2vec_file(self, file_name: str = None, token_size: int = 0)
+#### create_embedding()
 
-輸入詞向量檔案，產生其 word2vector dictionary, word2id dictionary, id2word dictionary，並返回 `Embedding` 物件
-
-- Parameters
-  - file_name: 詞向量檔案路徑
-  - token_size: 詞的數量
+輸入詞向量檔案，產生其 word2vector dictionary, word2id dictionary, 並返回 `Embedding` 物件
