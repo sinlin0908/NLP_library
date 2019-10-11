@@ -35,73 +35,93 @@ def save(data, file_name):
 
 
 class Embedding:
-    def __init__(self, w2v_dict, w2id_dict, id2w_dict, emb_matrix):
-        self.w2v_dict = w2v_dict
-        self.w2id_dict = w2id_dict
-        self.id2w_dict = id2w_dict
-        self.emb_matrix = emb_matrix
+    def __init__(self, w2v_dict: dict, w2id_dict):
+        self._w2v_dict = w2v_dict
+        self._w2id_dict = w2id_dict
+        self._num_word = len(self._w2v_dict)
 
     def __len__(self):
-        return len(self.w2v_dict)
+        return self._num_word
+
+    @property
+    def w2v(self):
+        return self._w2v_dict
+
+    @property
+    def w2id(self):
+        return self._w2id_dict
+
+    def get_id2w(self) -> dict:
+        print("Get ID to Word Dictionary....")
+        if not self._w2id_dict:
+            raise ValueError(self._w2id_dict)
+
+        return {idx: word for word, idx in self._w2id_dict.items()}
+
+    def get_emb_matrix(self) -> list:
+        print("Get embedding matrix.....")
+
+        emb_matrix = np.zeros(
+            (self._num_word+1, self._dim), dtype=np.float32)
+
+        for w, i in tqdm(self._w2id_dict.items()):
+            emb_matrix[i] = self._w2v_dict[w]
+
+        return emb_matrix
 
 
 class EmbeddingGenerator:
     def __init__(
         self,
+        file_name: str = None,
         dim: int = 0,
+        total_token_size: int = 0,
         special_tokens2id: dict = None,
     ):
         self._w2v_dict = {}
         self._w2id_dict = {}
-        self._id2w_dict = None
-        self._emb_matrix = None
         self._num_word = 0
         self._dim = dim
         self._special_tokens = None
+        self._file_name = file_name
+        self._total_token_size = total_token_size
 
-        if special_tokens:
+        if special_tokens2id:
 
-            if not isinstance(special_tokens, dict):
-                print('we need dict')
-                raise TypeError(special_tokens)
+            if not isinstance(special_tokens2id, dict):
+                raise TypeError(f"special tokens need a dict....")
 
-            self._special_tokens = special_tokens
+            self._special_tokens = special_tokens2id
 
-    def get_num_word(self):
+    @property
+    def num_word(self):
         return self._num_word
 
-    def load_word2vec_file(self, file_name: str = None, token_size: int = 0):
+    def load_word2vec_file(self):
 
         print('Load word to vector file.....')
 
-        if not file_name:
-            raise ValueError(file_name)
+        if not self._file_name:
+            raise ValueError("no file name")
 
-        self._get_w2v(file_name, token_size)
+        self._get_w2v()
         self._get_w2id()
-        self._get_id2w()
-        self._get_emb_matrix()
 
-        return Embedding(
-            w2v_dict=self._w2v_dict,
-            w2id_dict=self._w2id_dict,
-            id2w_dict=self._id2w_dict,
-            emb_matrix=self._emb_matrix
-        )
+        return Embedding(w2v_dict=self._w2v_dict, w2id_dict=self._w2id_dict)
 
-    def _read_file_line(self, file_name: str, token_size: int):
-        with codecs.open(file_name, 'r', encoding='utf-8') as f:
+    def _read_file_line(self):
+        with codecs.open(self._file_name, 'r', encoding='utf-8') as f:
             next(f)
 
-            for line in tqdm(f, total=token_size):
+            for line in tqdm(f, total=self._total_token_size):
                 yield line
 
-    def _get_w2v(self, file_name: str, token_size: int):
+    def _get_w2v(self):
         print("Get Word to Vector Dictionary....")
-        for line in self._read_file_line(file_name, token_size):
+        for line in self._read_file_line():
             array = line.split()
             word = array[0]
-            vector = np.array([float(val) for val in array[1:]])
+            vector = np.array(array[1:], dtype=np.float32)
 
             self._w2v_dict[word] = vector
 
@@ -117,7 +137,7 @@ class EmbeddingGenerator:
         print("Get Word to ID Dictionary....")
 
         if not self._w2v_dict:
-            raise ValueError(self._w2v_dict)
+            raise ValueError("word to vector dict is not exist....")
 
         if self._special_tokens:
             self._w2id_dict.update(self._special_tokens)
@@ -127,25 +147,10 @@ class EmbeddingGenerator:
             if k not in self._special_tokens.keys():
                 self._w2id_dict[k] = i
 
-    def _get_id2w(self):
-        print("Get ID to Word Dictionary....")
-        if not self._w2id_dict:
-            raise ValueError(self._w2id_dict)
-
-        self._id2w_dict = {idx: word for word, idx in self._w2id_dict.items()}
-
-    def _get_emb_matrix(self):
-        print("Get embedding matrix.....")
-
-        self._emb_matrix = np.zeros(
-            (self._num_word+1, self._dim), dtype=np.float32)
-
-        for w, i in tqdm(self._w2id_dict.items()):
-            self._emb_matrix[i] = self._w2v_dict[w]
-
 
 if __name__ == "__main__":
-    embg = EmbeddingGenerator(dim=300, special_tokens={"PAD": 0, "EOS": 1})
-    emb = embg.load_word2vec_file('./embedding/Total_word.word', 1292608)
+    embg = EmbeddingGenerator(file_name='./embedding/Total_word.word',
+                              total_token_size=1292608, dim=300, special_tokens2id={"PAD": 0, "EOS": 1})
+    emb = embg.load_word2vec_file()
 
-    print(emb.w2id_dict['PAD'])
+    print(emb.w2v['我'])
