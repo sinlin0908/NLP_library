@@ -35,10 +35,11 @@ def save(data, file_name):
 
 
 class Embedding:
-    def __init__(self, w2v_dict: dict, w2id_dict):
+    def __init__(self, w2v_dict: dict, w2id_dict:dict,dim:int):
         self._w2v_dict = w2v_dict
         self._w2id_dict = w2id_dict
         self._num_word = len(self._w2id_dict)
+	self._dim = dim
 
         print(len(self._w2v_dict), len(self._w2id_dict))
 
@@ -131,7 +132,7 @@ class EmbeddingGenerator:
 
         self._create_w2id()
 
-        return Embedding(w2v_dict=self._w2v_dict, w2id_dict=self._w2id_dict)
+        return Embedding(dim=self._dim, w2v_dict=self._w2v_dict, w2id_dict=self._w2id_dict)
 
     def _read_file_line(self):
         '''
